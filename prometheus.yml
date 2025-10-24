@@ -1,0 +1,15 @@
+# Prometheus configuration for Moon Scanner metrics
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'moon-scanner'
+
+scrape_configs:
+  - job_name: 'moon-scanner'
+    static_configs:
+      - targets: ['moon-scanner:9090']
+        labels:
+          app: 'solana-moon-scanner'
+          environment: 'production'

@@ -1,0 +1,119 @@
+{
+  "event": "token_alert",
+  "timestamp": "2024-01-15T10:30:45.123456",
+  "dex": "raydium",
+  "moon_score": {
+    "total_score": 87.5,
+    "rating": "VERY_STRONG",
+    "components": {
+      "buy_pressure": 85.0,
+      "volume_liquidity_ratio": 90.0,
+      "social_momentum": 75.0,
+      "holder_growth_rate": 80.0,
+      "dev_behavior_score": 95.0,
+      "technical_pattern_score": 88.0,
+      "market_timing_score": 85.0,
+      "age_multiplier": 1.5
+    }
+  },
+  "token": {
+    "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "symbol": "MOON",
+    "name": "Moon Token",
+    "age_minutes": 12.5
+  },
+  "metrics": {
+    "token_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "symbol": "MOON",
+    "name": "Moon Token",
+    "decimals": 9,
+    "total_supply": 1000000.0,
+    "circulating_supply": 1000000.0,
+    "liquidity_usd": 50000.0,
+    "liquidity_sol": 500.0,
+    "volume_24h": 45000.0,
+    "volume_1h": 12000.0,
+    "total_holders": 250,
+    "holder_growth_24h": 125,
+    "top_10_holders_percent": 28.5,
+    "dev_wallet_percent": 4.2,
+    "total_transactions": 450,
+    "buy_transactions_24h": 320,
+    "sell_transactions_24h": 130,
+    "transactions_24h": 450,
+    "price_usd": 0.045,
+    "price_change_24h": 125.5,
+    "market_cap_usd": 45000.0,
+    "age_minutes": 12.5
+  },
+  "validation": {
+    "token_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "overall_status": "pass",
+    "passed_checks": 8,
+    "failed_checks": 0,
+    "checks": [
+      {
+        "name": "Mint Authority",
+        "status": "pass",
+        "message": "✅ Mint authority is disabled",
+        "severity": "critical"
+      },
+      {
+        "name": "Freeze Authority",
+        "status": "pass",
+        "message": "✅ Freeze authority is disabled",
+        "severity": "critical"
+      },
+      {
+        "name": "Holder Distribution",
+        "status": "pass",
+        "message": "✅ Top 10 holders: 28.50% (< 30%)",
+        "severity": "high"
+      },
+      {
+        "name": "Dev Wallet",
+        "status": "pass",
+        "message": "✅ Dev wallet: 4.20% (< 5%)",
+        "severity": "medium"
+      },
+      {
+        "name": "Liquidity",
+        "status": "pass",
+        "message": "✅ Liquidity: $50,000.00",
+        "severity": "high"
+      },
+      {
+        "name": "Contract Verification",
+        "status": "pass",
+        "message": "✅ Contract verified on Solscan",
+        "severity": "medium"
+      },
+      {
+        "name": "Honeypot Check",
+        "status": "pass",
+        "message": "✅ No honeypot indicators detected",
+        "severity": "critical"
+      },
+      {
+        "name": "LP Lock",
+        "status": "pass",
+        "message": "✅ LP tokens locked for 60 days",
+        "severity": "high"
+      }
+    ],
+    "red_flags": [],
+    "warnings": [],
+    "summary": "✅ Validation passed (8/8 checks)"
+  },
+  "social": {
+    "twitter_mentions_24h": 150,
+    "twitter_mentions_growth": 75.0,
+    "telegram_members": 1250,
+    "discord_members": 850
+  },
+  "links": {
+    "solscan": "https://solscan.io/token/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "birdeye": "https://birdeye.so/token/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "dexscreener": "https://dexscreener.com/solana/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  }
+}
