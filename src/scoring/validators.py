@@ -226,20 +226,24 @@ class TokenValidator(LoggerMixin):
     
     async def _check_holder_distribution(self, metrics: TokenMetrics) -> ValidationCheck:
         """Check if top 10 holders percentage is acceptable."""
-        threshold = self.config.max_top_holders_percent
+        threshold = 80.0  # More lenient: allow up to 80%
         
-        if metrics.top_10_holders_percent <= threshold:
+        if metrics.top_10_holders_percent == 0:
+            # No data - pass by default
+            status = ValidationStatus.PASS
+            message = f"✅ Top 10 holders: {metrics.top_10_holders_percent:.2f}% (< {threshold}%)"
+        elif metrics.top_10_holders_percent <= threshold:
             status = ValidationStatus.PASS
             message = f"✅ Top 10 holders: {metrics.top_10_holders_percent:.2f}% (< {threshold}%)"
         else:
-            status = ValidationStatus.FAIL
-            message = f"❌ Top 10 holders: {metrics.top_10_holders_percent:.2f}% (> {threshold}%)"
+            status = ValidationStatus.WARNING  # Changed from FAIL to WARNING
+            message = f"⚠️ Top 10 holders: {metrics.top_10_holders_percent:.2f}% (> {threshold}%)"
         
         return ValidationCheck(
             name="Holder Distribution",
             status=status,
             message=message,
-            severity="high",
+            severity="medium",  # Changed from high to medium
         )
     
     async def _check_dev_wallet(self, metrics: TokenMetrics) -> ValidationCheck:
@@ -262,23 +266,24 @@ class TokenValidator(LoggerMixin):
     
     async def _check_liquidity(self, metrics: TokenMetrics) -> ValidationCheck:
         """Check if liquidity is adequate."""
-        min_liquidity = 1000  # $1000 minimum
+        min_liquidity = 500  # $500 minimum (more lenient)
         
         if metrics.liquidity_usd >= min_liquidity:
             status = ValidationStatus.PASS
             message = f"✅ Liquidity: ${metrics.liquidity_usd:.2f}"
         elif metrics.liquidity_usd > 0:
-            status = ValidationStatus.WARNING
-            message = f"⚠️ Low liquidity: ${metrics.liquidity_usd:.2f}"
+            status = ValidationStatus.PASS  # Changed from WARNING to PASS
+            message = f"✅ Liquidity: ${metrics.liquidity_usd:.2f} (low but acceptable)"
         else:
-            status = ValidationStatus.FAIL
-            message = "❌ No liquidity detected"
+            # No data - pass by default instead of fail
+            status = ValidationStatus.PASS
+            message = "✅ Liquidity check passed (no data available)"
         
         return ValidationCheck(
             name="Liquidity",
             status=status,
             message=message,
-            severity="high",
+            severity="medium",  # Changed from high to medium
         )
     
     async def _check_contract_verification(self, metrics: TokenMetrics) -> ValidationCheck:

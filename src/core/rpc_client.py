@@ -7,6 +7,7 @@ from datetime import datetime
 import aiohttp
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Confirmed
+from solders.pubkey import Pubkey
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -149,7 +150,9 @@ class RPCClient(LoggerMixin):
             await self.initialize()
         
         try:
-            params = [token_address, {"encoding": "jsonParsed"}]
+            # Convert string address to Pubkey object
+            pubkey = Pubkey.from_string(token_address)
+            params = [pubkey, {"encoding": "jsonParsed"}]
             response = await self._make_request(
                 self.primary_client,
                 "getAccountInfo",
@@ -162,6 +165,8 @@ class RPCClient(LoggerMixin):
             if self.backup_client:
                 self.logger.info("Trying backup client...")
                 provider = "helius" if self.config.primary_rpc_provider == "quicknode" else "quicknode"
+                pubkey = Pubkey.from_string(token_address)
+                params = [pubkey, {"encoding": "jsonParsed"}]
                 response = await self._make_request(
                     self.backup_client,
                     "getAccountInfo",
@@ -185,7 +190,8 @@ class RPCClient(LoggerMixin):
             await self.initialize()
         
         try:
-            params = [token_address]
+            pubkey = Pubkey.from_string(token_address)
+            params = [pubkey]
             response = await self._make_request(
                 self.primary_client,
                 "getTokenSupply",
@@ -197,6 +203,8 @@ class RPCClient(LoggerMixin):
             self.logger.error(f"Failed to get token supply: {e}")
             if self.backup_client:
                 provider = "helius" if self.config.primary_rpc_provider == "quicknode" else "quicknode"
+                pubkey = Pubkey.from_string(token_address)
+                params = [pubkey]
                 response = await self._make_request(
                     self.backup_client,
                     "getTokenSupply",
@@ -227,7 +235,8 @@ class RPCClient(LoggerMixin):
             await self.initialize()
         
         try:
-            params = [address, {"limit": limit}]
+            pubkey = Pubkey.from_string(address)
+            params = [pubkey, {"limit": limit}]
             if before:
                 params[1]["before"] = before
             
@@ -242,6 +251,10 @@ class RPCClient(LoggerMixin):
             self.logger.error(f"Failed to get signatures: {e}")
             if self.backup_client:
                 provider = "helius" if self.config.primary_rpc_provider == "quicknode" else "quicknode"
+                pubkey = Pubkey.from_string(address)
+                params = [pubkey, {"limit": limit}]
+                if before:
+                    params[1]["before"] = before
                 response = await self._make_request(
                     self.backup_client,
                     "getSignaturesForAddress",
@@ -311,7 +324,8 @@ class RPCClient(LoggerMixin):
             await self.initialize()
         
         try:
-            params = [token_address]
+            pubkey = Pubkey.from_string(token_address)
+            params = [pubkey]
             response = await self._make_request(
                 self.primary_client,
                 "getTokenLargestAccounts",
@@ -323,6 +337,8 @@ class RPCClient(LoggerMixin):
             self.logger.error(f"Failed to get largest accounts: {e}")
             if self.backup_client:
                 provider = "helius" if self.config.primary_rpc_provider == "quicknode" else "quicknode"
+                pubkey = Pubkey.from_string(token_address)
+                params = [pubkey]
                 response = await self._make_request(
                     self.backup_client,
                     "getTokenLargestAccounts",
