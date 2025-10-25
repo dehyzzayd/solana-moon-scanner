@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <!-- Chart.js -->
@@ -128,7 +129,7 @@
             }
         }
         
-        function showToast(message, type = 'info') {
+        window.showToast = function(message, type = 'info') {
             const toast = document.createElement('div');
             const colors = {
                 success: 'bg-green-500',

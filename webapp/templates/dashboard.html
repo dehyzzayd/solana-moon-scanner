@@ -34,6 +34,109 @@
         </div>
     </div>
 
+    <!-- Quick Configuration Panel -->
+    <div class="bg-gray-800 rounded-lg shadow-lg mb-6" x-data="{configOpen: false}">
+        <div class="p-4 flex items-center justify-between cursor-pointer" @click="configOpen = !configOpen">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-sliders-h text-xl text-blue-400"></i>
+                <h3 class="text-lg font-bold text-white">Quick Configuration</h3>
+                <span class="text-xs text-gray-400">(Click to expand)</span>
+            </div>
+            <i class="fas transition-transform" :class="configOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+        </div>
+        
+        <div x-show="configOpen" x-collapse class="p-6 pt-0 border-t border-gray-700">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Auto Scanner Settings -->
+                <div class="bg-gray-900/50 rounded-lg p-4">
+                    <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-robot text-purple-400"></i>
+                        Auto Scanner
+                    </h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Max Token Age (hours)</label>
+                            <input type="number" x-model="quickConfig.max_token_age_hours" min="1" max="24" step="1"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                            <p class="text-xs text-gray-500 mt-1">Current: <span x-text="quickConfig.max_token_age_hours"></span>h</p>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Min Liquidity ($)</label>
+                            <input type="number" x-model="quickConfig.min_liquidity" min="0" step="100"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                            <p class="text-xs text-gray-500 mt-1">Current: $<span x-text="quickConfig.min_liquidity"></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Validation Rules -->
+                <div class="bg-gray-900/50 rounded-lg p-4">
+                    <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-green-400"></i>
+                        Validation Rules
+                    </h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Top 10 Holders Max %</label>
+                            <input type="number" x-model="quickConfig.top_holders_max" min="0" max="100" step="5"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                            <p class="text-xs text-gray-500 mt-1">Current: <span x-text="quickConfig.top_holders_max"></span>%</p>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Min Validation Liquidity ($)</label>
+                            <input type="number" x-model="quickConfig.min_validation_liquidity" min="0" step="100"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                            <p class="text-xs text-gray-500 mt-1">Current: $<span x-text="quickConfig.min_validation_liquidity"></span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scoring Weights -->
+                <div class="bg-gray-900/50 rounded-lg p-4">
+                    <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        Score Thresholds
+                    </h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">High Score Threshold</label>
+                            <input type="number" x-model="quickConfig.high_score_threshold" min="0" max="100" step="5"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                            <p class="text-xs text-gray-500 mt-1">Scores ≥ <span x-text="quickConfig.high_score_threshold"></span> marked as high</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" x-model="quickConfig.lenient_validation" id="lenient"
+                                   class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                            <label for="lenient" class="text-xs text-gray-300">Lenient Validation (Pass unknowns)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex gap-3">
+                <button @click="applyQuickConfig()" 
+                        class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                    <i class="fas fa-check mr-2"></i>
+                    Apply Configuration
+                </button>
+                <button @click="resetQuickConfig()" 
+                        class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                    <i class="fas fa-undo mr-2"></i>
+                    Reset
+                </button>
+            </div>
+
+            <div class="mt-4 bg-blue-900/20 border border-blue-500/30 rounded p-3">
+                <p class="text-xs text-gray-300">
+                    <i class="fas fa-info-circle text-blue-400 mr-1"></i>
+                    <strong>Tip:</strong> Lower the liquidity requirement and increase token age to discover more tokens. 
+                    Enable "Lenient Validation" to pass tokens with missing data.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Manual Scan Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Manual Token Address Scan -->
@@ -363,8 +466,17 @@ function dashboardData() {
         history: [],
         loading: true,
         chart: null,
+        quickConfig: {
+            max_token_age_hours: 1,
+            min_liquidity: 500,
+            top_holders_max: 90,
+            min_validation_liquidity: 100,
+            high_score_threshold: 70,
+            lenient_validation: true
+        },
         
         async init() {
+            this.loadQuickConfig();
             await this.loadStats();
             await this.loadHistory();
             await this.loadAutoScannerStatus();
@@ -609,6 +721,64 @@ function dashboardData() {
             }).catch(() => {
                 window.showToast('Failed to copy', 'error');
             });
+        },
+        
+        loadQuickConfig() {
+            const saved = localStorage.getItem('quick_config');
+            if (saved) {
+                try {
+                    this.quickConfig = { ...this.quickConfig, ...JSON.parse(saved) };
+                } catch (e) {
+                    console.error('Failed to load quick config:', e);
+                }
+            }
+        },
+        
+        async applyQuickConfig() {
+            try {
+                // Save to localStorage
+                localStorage.setItem('quick_config', JSON.stringify(this.quickConfig));
+                
+                // Send to backend API
+                const response = await fetch('/api/config/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.quickConfig)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.showToast('✅ Configuration applied successfully!', 'success');
+                    
+                    // If auto scanner is running, restart it to apply new config
+                    if (this.autoScannerStatus.running) {
+                        window.showToast('♻️ Restarting auto scanner with new config...', 'info');
+                        await this.toggleAutoScanner(); // Stop
+                        setTimeout(async () => {
+                            await this.toggleAutoScanner(); // Start
+                        }, 1000);
+                    }
+                } else {
+                    window.showToast('⚠️ Config saved locally, but backend update failed', 'warning');
+                }
+            } catch (error) {
+                console.error('Error applying config:', error);
+                window.showToast('⚠️ Config saved locally: ' + error.message, 'warning');
+            }
+        },
+        
+        resetQuickConfig() {
+            this.quickConfig = {
+                max_token_age_hours: 1,
+                min_liquidity: 500,
+                top_holders_max: 90,
+                min_validation_liquidity: 100,
+                high_score_threshold: 70,
+                lenient_validation: true
+            };
+            localStorage.removeItem('quick_config');
+            window.showToast('Configuration reset to defaults', 'success');
         }
     }
 }

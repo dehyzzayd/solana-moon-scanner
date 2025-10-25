@@ -485,6 +485,36 @@ async def api_save_settings(request: dict):
     }
 
 
+@app.post("/api/config/update")
+async def api_update_config(request: dict):
+    """Update scanner configuration in real-time."""
+    global auto_scanner
+    
+    try:
+        if auto_scanner:
+            # Update auto scanner settings
+            if 'max_token_age_hours' in request:
+                auto_scanner.max_token_age_minutes = int(request['max_token_age_hours']) * 60
+            
+            if 'min_liquidity' in request:
+                auto_scanner.min_liquidity_usd = float(request['min_liquidity'])
+        
+        return {
+            "success": True,
+            "message": "Configuration updated successfully",
+            "data": {
+                "max_token_age_minutes": auto_scanner.max_token_age_minutes if auto_scanner else None,
+                "min_liquidity_usd": auto_scanner.min_liquidity_usd if auto_scanner else None
+            }
+        }
+    except Exception as e:
+        logger.error(f"Config update error: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 # ============================================================================
 # WEBSOCKET FOR REAL-TIME UPDATES
 # ============================================================================
