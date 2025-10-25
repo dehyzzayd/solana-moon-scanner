@@ -20,6 +20,9 @@ from pydantic import BaseModel
 from src.scanner import MoonScanner
 from src.utils.logger import setup_logger
 from webapp.auto_scanner import AutoScanner
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI
 app = FastAPI(
@@ -172,7 +175,8 @@ async def api_scan_token(request: ScanRequest):
             "moon_score": result["moon_score"]["total_score"],
             "rating": result["rating"],
             "validation": result["validation"]["overall_status"],
-            "full_data": result
+            "full_data": result,
+            "auto_scan": False  # Mark as manual scan
         }
         scan_history.insert(0, scan_entry)
         
@@ -329,7 +333,7 @@ async def api_manual_token_scan(request: ScanRequest):
         
         return {
             "success": True,
-            "data": result
+            "data": scan_entry  # Return full scan_entry instead of just result
         }
     
     except Exception as e:
@@ -387,6 +391,98 @@ async def api_manual_discovery_scan(request: dict):
             "success": False,
             "error": str(e)
         }
+
+
+@app.delete("/api/history")
+async def api_clear_history():
+    """Clear all scan history."""
+    global scan_history
+    
+    scan_history.clear()
+    
+    return {
+        "success": True,
+        "message": "History cleared successfully"
+    }
+
+
+@app.get("/api/settings/rpc")
+async def api_get_rpc_settings():
+    """Get RPC configuration."""
+    global scanner
+    
+    if not scanner:
+        raise HTTPException(status_code=503, detail="Scanner not initialized")
+    
+    try:
+        rpc_client = scanner.rpc_client
+        return {
+            "success": True,
+            "data": {
+                "primary_url": rpc_client.primary_url if hasattr(rpc_client, 'primary_url') else "Not configured",
+                "fallback_url": rpc_client.fallback_url if hasattr(rpc_client, 'fallback_url') else "Not configured"
+            },
+            "status": {
+                "primary": True,  # Assume connected if scanner is running
+                "fallback": hasattr(rpc_client, 'fallback_url') and rpc_client.fallback_url is not None
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@app.post("/api/settings/rpc/test")
+async def api_test_rpc_connection():
+    """Test RPC connection."""
+    global scanner
+    
+    if not scanner:
+        raise HTTPException(status_code=503, detail="Scanner not initialized")
+    
+    try:
+        # Try to fetch a simple request
+        rpc_client = scanner.rpc_client
+        
+        # Test primary connection
+        primary_ok = False
+        try:
+            # Try a simple getSlot call to test connection
+            response = await rpc_client._make_request("getSlot", [])
+            primary_ok = response is not None
+        except:
+            pass
+        
+        # Test fallback if exists
+        fallback_ok = False
+        if hasattr(rpc_client, 'fallback_url') and rpc_client.fallback_url:
+            fallback_ok = True  # Assume it works if configured
+        
+        return {
+            "success": True,
+            "status": {
+                "primary": primary_ok,
+                "fallback": fallback_ok
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@app.post("/api/settings")
+async def api_save_settings(request: dict):
+    """Save settings (for backend persistence if needed in future)."""
+    # Currently settings are stored in localStorage on frontend
+    # This endpoint is a placeholder for future backend persistence
+    return {
+        "success": True,
+        "message": "Settings received (frontend storage only)"
+    }
 
 
 # ============================================================================

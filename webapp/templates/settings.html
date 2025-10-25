@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div x-data="settingsData()" x-init="init()">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-white mb-2">
+            <i class="fas fa-cog text-blue-400 mr-2"></i>
+            Settings
+        </h2>
+        <p class="text-gray-400">Configure auto scanner and validation rules</p>
+    </div>
+
+    <!-- Auto Scanner Settings -->
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold text-white mb-4">
+            <i class="fas fa-robot mr-2"></i>
+            Auto Scanner Configuration
+        </h3>
+        
+        <div class="space-y-6">
+            <!-- Scan Interval -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Scan Interval (minutes)
+                </label>
+                <input type="number" 
+                       x-model="settings.scan_interval_minutes"
+                       min="1" 
+                       max="60"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="mt-1 text-sm text-gray-400">How often the auto scanner runs (default: 5 minutes)</p>
+            </div>
+
+            <!-- Max Token Age -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Max Token Age (minutes)
+                </label>
+                <input type="number" 
+                       x-model="settings.max_token_age_minutes"
+                       min="10" 
+                       max="360"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="mt-1 text-sm text-gray-400">Only scan tokens created within this timeframe (default: 60 minutes)</p>
+            </div>
+
+            <!-- Min Liquidity -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Minimum Liquidity (USD)
+                </label>
+                <input type="number" 
+                       x-model="settings.min_liquidity_usd"
+                       min="0" 
+                       step="100"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="mt-1 text-sm text-gray-400">Only scan tokens with at least this much liquidity (default: $1000)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Rules Settings -->
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold text-white mb-4">
+            <i class="fas fa-shield-alt mr-2"></i>
+            Validation Rules
+        </h3>
+        
+        <div class="space-y-6">
+            <!-- Top Holders Threshold -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Top 10 Holders Max Percentage
+                </label>
+                <input type="number" 
+                       x-model="settings.top_holders_max_percent"
+                       min="0" 
+                       max="100"
+                       step="1"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="mt-1 text-sm text-gray-400">Maximum percentage of supply held by top 10 holders (default: 80%)</p>
+            </div>
+
+            <!-- Min Liquidity for Validation -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Minimum Liquidity for Pass (USD)
+                </label>
+                <input type="number" 
+                       x-model="settings.min_validation_liquidity"
+                       min="0" 
+                       step="100"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="mt-1 text-sm text-gray-400">Minimum liquidity required to pass validation (default: $500)</p>
+            </div>
+
+            <!-- Enable Mint Authority Check -->
+            <div class="flex items-center">
+                <input type="checkbox" 
+                       x-model="settings.check_mint_authority"
+                       id="check-mint"
+                       class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500">
+                <label for="check-mint" class="ml-2 text-sm text-gray-300">
+                    Validate Mint Authority (disabled = pass)
+                </label>
+            </div>
+
+            <!-- Enable Freeze Authority Check -->
+            <div class="flex items-center">
+                <input type="checkbox" 
+                       x-model="settings.check_freeze_authority"
+                       id="check-freeze"
+                       class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500">
+                <label for="check-freeze" class="ml-2 text-sm text-gray-300">
+                    Validate Freeze Authority (disabled = pass)
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold text-white mb-4">
+            <i class="fas fa-bell mr-2"></i>
+            Notifications
+        </h3>
+        
+        <div class="space-y-6">
+            <!-- Telegram Alerts -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <label class="text-sm font-medium text-gray-300">Telegram Alerts</label>
+                    <p class="text-sm text-gray-400">Send alerts for high-scoring tokens</p>
+                </div>
+                <button @click="settings.telegram_enabled = !settings.telegram_enabled"
+                        :class="settings.telegram_enabled ? 'bg-green-600' : 'bg-gray-600'"
+                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
+                    <span :class="settings.telegram_enabled ? 'translate-x-6' : 'translate-x-1'"
+                          class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
+                </button>
+            </div>
+
+            <!-- Min Score for Alert -->
+            <div x-show="settings.telegram_enabled">
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Minimum Score for Alert
+                </label>
+                <input type="number" 
+                       x-model="settings.min_alert_score"
+                       min="0" 
+                       max="100"
+                       step="1"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="mt-1 text-sm text-gray-400">Only send alerts for tokens scoring above this threshold (default: 70)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RPC Settings -->
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold text-white mb-4">
+            <i class="fas fa-network-wired mr-2"></i>
+            RPC Configuration
+        </h3>
+        
+        <div class="space-y-4">
+            <div class="bg-gray-900/50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-300">Primary RPC</span>
+                    <span class="text-xs px-2 py-1 rounded-full" 
+                          :class="rpcStatus.primary ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
+                        <i class="fas fa-circle mr-1 text-xs"></i>
+                        <span x-text="rpcStatus.primary ? 'Connected' : 'Disconnected'"></span>
+                    </span>
+                </div>
+                <code class="text-xs text-blue-400 break-all" x-text="rpcConfig.primary_url || 'Not configured'"></code>
+            </div>
+
+            <div class="bg-gray-900/50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-300">Fallback RPC</span>
+                    <span class="text-xs px-2 py-1 rounded-full" 
+                          :class="rpcStatus.fallback ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'">
+                        <i class="fas fa-circle mr-1 text-xs"></i>
+                        <span x-text="rpcStatus.fallback ? 'Connected' : 'Not configured'"></span>
+                    </span>
+                </div>
+                <code class="text-xs text-blue-400 break-all" x-text="rpcConfig.fallback_url || 'Not configured'"></code>
+            </div>
+
+            <button @click="testRpcConnection()" 
+                    :disabled="testing"
+                    class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors">
+                <i class="fas mr-2" :class="testing ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
+                <span x-text="testing ? 'Testing Connection...' : 'Test RPC Connection'"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-4">
+        <button @click="saveSettings()" 
+                :disabled="saving"
+                class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
+            <i class="fas mr-2" :class="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+            <span x-text="saving ? 'Saving...' : 'Save Settings'"></span>
+        </button>
+        
+        <button @click="resetToDefaults()" 
+                class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
+            <i class="fas fa-undo mr-2"></i>
+            Reset to Defaults
+        </button>
+    </div>
+
+    <!-- Info Note -->
+    <div class="mt-8 bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+        <div class="flex gap-3">
+            <i class="fas fa-info-circle text-blue-400 mt-1"></i>
+            <div class="text-sm text-gray-300">
+                <p class="font-semibold mb-1">Note:</p>
+                <p>Settings are stored locally in your browser. If you clear your browser data, these settings will be reset to defaults.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function settingsData() {
+    return {
+        settings: {
+            scan_interval_minutes: 5,
+            max_token_age_minutes: 60,
+            min_liquidity_usd: 1000,
+            top_holders_max_percent: 80,
+            min_validation_liquidity: 500,
+            check_mint_authority: true,
+            check_freeze_authority: true,
+            telegram_enabled: false,
+            min_alert_score: 70
+        },
+        rpcConfig: {
+            primary_url: '',
+            fallback_url: ''
+        },
+        rpcStatus: {
+            primary: false,
+            fallback: false
+        },
+        saving: false,
+        testing: false,
+        
+        init() {
+            this.loadSettings();
+            this.loadRpcConfig();
+        },
+        
+        loadSettings() {
+            const saved = localStorage.getItem('scanner_settings');
+            if (saved) {
+                try {
+                    this.settings = { ...this.settings, ...JSON.parse(saved) };
+                } catch (e) {
+                    console.error('Failed to load settings:', e);
+                }
+            }
+        },
+        
+        async loadRpcConfig() {
+            try {
+                const response = await fetch('/api/settings/rpc');
+                const result = await response.json();
+                if (result.success) {
+                    this.rpcConfig = result.data;
+                    this.rpcStatus = result.status || { primary: false, fallback: false };
+                }
+            } catch (error) {
+                console.error('Failed to load RPC config:', error);
+            }
+        },
+        
+        async saveSettings() {
+            this.saving = true;
+            try {
+                // Save to localStorage
+                localStorage.setItem('scanner_settings', JSON.stringify(this.settings));
+                
+                // Send to backend
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.settings)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.showToast('✅ Settings saved successfully!', 'success');
+                } else {
+                    window.showToast('⚠️ Settings saved locally but backend update failed', 'warning');
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                window.showToast('✅ Settings saved locally', 'success');
+            } finally {
+                this.saving = false;
+            }
+        },
+        
+        resetToDefaults() {
+            if (!confirm('Reset all settings to default values?')) return;
+            
+            this.settings = {
+                scan_interval_minutes: 5,
+                max_token_age_minutes: 60,
+                min_liquidity_usd: 1000,
+                top_holders_max_percent: 80,
+                min_validation_liquidity: 500,
+                check_mint_authority: true,
+                check_freeze_authority: true,
+                telegram_enabled: false,
+                min_alert_score: 70
+            };
+            
+            localStorage.removeItem('scanner_settings');
+            window.showToast('Settings reset to defaults', 'success');
+        },
+        
+        async testRpcConnection() {
+            this.testing = true;
+            try {
+                const response = await fetch('/api/settings/rpc/test', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.rpcStatus = result.status;
+                    const primaryStatus = result.status.primary ? '✅' : '❌';
+                    const fallbackStatus = result.status.fallback ? '✅' : '⚠️';
+                    window.showToast(`Primary: ${primaryStatus} | Fallback: ${fallbackStatus}`, 'info');
+                } else {
+                    window.showToast('Connection test failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error testing RPC:', error);
+                window.showToast('Error: ' + error.message, 'error');
+            } finally {
+                this.testing = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

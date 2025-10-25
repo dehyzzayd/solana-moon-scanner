@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div x-data="historyData()" x-init="init()">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold text-white mb-2">
+                    <i class="fas fa-history text-blue-400 mr-2"></i>
+                    Scan History
+                </h2>
+                <p class="text-gray-400">Complete history of all scanned tokens</p>
+            </div>
+            <div class="flex gap-3">
+                <button @click="loadHistory()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Refresh
+                </button>
+                <button @click="clearHistory()" class="px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded-lg transition-colors">
+                    <i class="fas fa-trash mr-2"></i>
+                    Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Type</label>
+                <select x-model="filters.type" @change="applyFilters()" 
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All Scans</option>
+                    <option value="auto">Auto Scans</option>
+                    <option value="manual">Manual Scans</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Filter by Validation</label>
+                <select x-model="filters.validation" @change="applyFilters()" 
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All Results</option>
+                    <option value="pass">Passed Only</option>
+                    <option value="fail">Failed Only</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Minimum Score</label>
+                <input type="number" x-model="filters.minScore" @input="applyFilters()" 
+                       min="0" max="100" step="1"
+                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Results per page</label>
+                <select x-model="perPage" @change="applyFilters()" 
+                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="mt-4 flex items-center justify-between">
+            <p class="text-sm text-gray-400">
+                Showing <span x-text="filteredHistory.length"></span> of <span x-text="history.length"></span> scans
+            </p>
+            <button @click="resetFilters()" class="text-sm text-blue-400 hover:text-blue-300">
+                <i class="fas fa-undo mr-1"></i> Reset Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div x-show="loading" class="bg-gray-800 rounded-lg shadow-lg p-12 text-center">
+        <i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>
+        <p class="mt-4 text-gray-400">Loading history...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div x-show="!loading && history.length === 0" class="bg-gray-800 rounded-lg shadow-lg p-12 text-center">
+        <i class="fas fa-search text-6xl text-gray-600 mb-4"></i>
+        <h3 class="text-xl font-bold text-white mb-2">No Scan History</h3>
+        <p class="text-gray-400 mb-6">You haven't scanned any tokens yet.</p>
+        <a href="/scan" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            <i class="fas fa-search mr-2"></i>
+            Scan Your First Token
+        </a>
+    </div>
+
+    <!-- History Table -->
+    <div x-show="!loading && history.length > 0" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Timestamp</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Token Address</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Symbol</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">MoonScore</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rating</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Validation</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    <template x-for="(scan, index) in getPaginatedHistory()" :key="scan.id">
+                        <template>
+                            <!-- Main Row -->
+                            <tr class="hover:bg-gray-700/50 transition-colors cursor-pointer" @click="toggleExpandedRow(scan.id)">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span x-show="scan.auto_scan" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-400/10 text-purple-400">
+                                        <i class="fas fa-robot mr-1"></i> AUTO
+                                    </span>
+                                    <span x-show="!scan.auto_scan" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-400/10 text-gray-400">
+                                        <i class="fas fa-hand-pointer mr-1"></i> MANUAL
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300" x-text="formatTimestamp(scan.timestamp)"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <code class="text-blue-400 font-mono text-xs" x-text="scan.token_address.substring(0, 12) + '...'"></code>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300" x-text="scan.full_data?.moon_score?.metrics?.symbol || 'N/A'"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-2xl font-bold" :class="getScoreColor(scan.moon_score)" x-text="scan.moon_score.toFixed(2)"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300" x-text="scan.rating"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                          :class="scan.validation === 'pass' ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'"
+                                          x-text="scan.validation.toUpperCase()">
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <button @click.stop="toggleExpandedRow(scan.id)" class="text-gray-400 hover:text-white">
+                                            <i class="fas" :class="expandedRows.includes(scan.id) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                        </button>
+                                        <a :href="`https://solscan.io/token/${scan.token_address}`" target="_blank" 
+                                           @click.stop
+                                           class="text-blue-400 hover:text-blue-300">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Expanded Details Row (reusing from dashboard) -->
+                            <tr x-show="expandedRows.includes(scan.id)" class="bg-gray-900/50">
+                                <td colspan="8" class="px-6 py-6">
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- Token Metrics -->
+                                        <div>
+                                            <h4 class="text-lg font-bold text-white mb-4">📊 Token Metrics</h4>
+                                            <div class="bg-gray-800 rounded-lg p-4 space-y-3 text-sm">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-400">Price:</span>
+                                                    <span class="text-white" x-text="'$' + (scan.full_data?.moon_score?.metrics?.price_usd || 0).toFixed(8)"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-400">Liquidity:</span>
+                                                    <span class="text-white" x-text="'$' + (scan.full_data?.moon_score?.metrics?.liquidity_usd || 0).toLocaleString()"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-400">Market Cap:</span>
+                                                    <span class="text-white" x-text="'$' + (scan.full_data?.moon_score?.metrics?.market_cap_usd || 0).toLocaleString()"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-400">24h Volume:</span>
+                                                    <span class="text-white" x-text="'$' + (scan.full_data?.moon_score?.metrics?.volume_24h || 0).toLocaleString()"></span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-400">Holders:</span>
+                                                    <span class="text-white" x-text="(scan.full_data?.moon_score?.metrics?.total_holders || 0).toLocaleString()"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Validation Checks -->
+                                        <div>
+                                            <h4 class="text-lg font-bold text-white mb-4">✅ Validation</h4>
+                                            <div class="space-y-2">
+                                                <template x-for="check in scan.full_data?.validation?.checks" :key="check.name">
+                                                    <div class="bg-gray-800 rounded-lg p-3 flex items-center gap-3">
+                                                        <i class="fas text-sm" :class="{
+                                                            'fa-check-circle text-green-400': check.status === 'pass',
+                                                            'fa-times-circle text-red-400': check.status === 'fail',
+                                                            'fa-question-circle text-gray-400': check.status === 'unknown'
+                                                        }"></i>
+                                                        <span class="text-sm text-gray-300" x-text="check.name"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div x-show="perPage !== 'all' && totalPages > 1" class="bg-gray-900 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <button @click="currentPage = Math.max(1, currentPage - 1)" 
+                        :disabled="currentPage === 1"
+                        class="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-lg transition-colors">
+                    <i class="fas fa-chevron-left mr-2"></i>
+                    Previous
+                </button>
+                
+                <span class="text-gray-400">
+                    Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span>
+                </span>
+                
+                <button @click="currentPage = Math.min(totalPages, currentPage + 1)" 
+                        :disabled="currentPage === totalPages"
+                        class="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-lg transition-colors">
+                    Next
+                    <i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function historyData() {
+    return {
+        history: [],
+        filteredHistory: [],
+        expandedRows: [],
+        loading: true,
+        filters: {
+            type: 'all',
+            validation: 'all',
+            minScore: 0
+        },
+        perPage: 25,
+        currentPage: 1,
+        
+        get totalPages() {
+            if (this.perPage === 'all') return 1;
+            return Math.ceil(this.filteredHistory.length / parseInt(this.perPage));
+        },
+        
+        async init() {
+            await this.loadHistory();
+        },
+        
+        async loadHistory() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/history');
+                const result = await response.json();
+                if (result.success) {
+                    this.history = result.data;
+                    this.applyFilters();
+                }
+            } catch (error) {
+                console.error('Failed to load history:', error);
+                window.showToast('Failed to load history', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        applyFilters() {
+            this.filteredHistory = this.history.filter(scan => {
+                // Type filter
+                if (this.filters.type === 'auto' && !scan.auto_scan) return false;
+                if (this.filters.type === 'manual' && scan.auto_scan) return false;
+                
+                // Validation filter
+                if (this.filters.validation !== 'all' && scan.validation !== this.filters.validation) return false;
+                
+                // Score filter
+                if (scan.moon_score < this.filters.minScore) return false;
+                
+                return true;
+            });
+            
+            this.currentPage = 1;
+        },
+        
+        resetFilters() {
+            this.filters = {
+                type: 'all',
+                validation: 'all',
+                minScore: 0
+            };
+            this.perPage = 25;
+            this.applyFilters();
+        },
+        
+        getPaginatedHistory() {
+            if (this.perPage === 'all') return this.filteredHistory;
+            
+            const start = (this.currentPage - 1) * parseInt(this.perPage);
+            const end = start + parseInt(this.perPage);
+            return this.filteredHistory.slice(start, end);
+        },
+        
+        async clearHistory() {
+            if (!confirm('Are you sure you want to clear all scan history?')) return;
+            
+            try {
+                const response = await fetch('/api/history', { method: 'DELETE' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.showToast('History cleared successfully', 'success');
+                    this.history = [];
+                    this.filteredHistory = [];
+                } else {
+                    window.showToast('Failed to clear history', 'error');
+                }
+            } catch (error) {
+                console.error('Error clearing history:', error);
+                window.showToast('Error: ' + error.message, 'error');
+            }
+        },
+        
+        toggleExpandedRow(scanId) {
+            const index = this.expandedRows.indexOf(scanId);
+            if (index > -1) {
+                this.expandedRows.splice(index, 1);
+            } else {
+                this.expandedRows.push(scanId);
+            }
+        },
+        
+        getScoreColor(score) {
+            if (score >= 90) return 'text-blue-400';
+            if (score >= 80) return 'text-green-400';
+            if (score >= 70) return 'text-yellow-400';
+            if (score >= 60) return 'text-orange-400';
+            return 'text-red-400';
+        },
+        
+        formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+    }
+}
+</script>
+{% endblock %}

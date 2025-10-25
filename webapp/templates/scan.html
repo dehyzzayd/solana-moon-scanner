@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div x-data="scanData()" x-init="init()">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-white mb-2">
+            <i class="fas fa-search text-blue-400 mr-2"></i>
+            Scan Token
+        </h2>
+        <p class="text-gray-400">Enter a Solana token address to get detailed analysis and MoonScore rating</p>
+    </div>
+
+    <!-- Scan Form -->
+    <div class="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
+        <div class="space-y-6">
+            <div>
+                <label for="token-address" class="block text-sm font-medium text-gray-300 mb-2">
+                    Token Address
+                </label>
+                <input type="text" 
+                       id="token-address"
+                       x-model="tokenAddress"
+                       @keyup.enter="scanToken()"
+                       placeholder="e.g., So11111111111111111111111111111111111111112"
+                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm">
+                <p class="mt-2 text-sm text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Enter a valid Solana token mint address
+                </p>
+            </div>
+
+            <button @click="scanToken()" 
+                    :disabled="!tokenAddress || scanning"
+                    class="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-xl">
+                <i class="fas mr-2" :class="scanning ? 'fa-spinner fa-spin' : 'fa-rocket'"></i>
+                <span x-text="scanning ? 'Scanning Token...' : 'Scan Token'"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Scan Result -->
+    <div x-show="scanResult" x-cloak class="bg-gray-800 rounded-lg shadow-lg p-8">
+        <div class="mb-6">
+            <h3 class="text-2xl font-bold text-white mb-2">Scan Results</h3>
+            <p class="text-sm text-gray-400">Token analyzed at <span x-text="new Date(scanResult?.timestamp).toLocaleString()"></span></p>
+        </div>
+
+        <!-- MoonScore Display -->
+        <div class="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-lg p-8 mb-8 border border-purple-500/30">
+            <div class="text-center">
+                <div class="text-6xl font-bold mb-2" :class="getScoreColor(scanResult?.moon_score)" x-text="scanResult?.moon_score?.toFixed(2)"></div>
+                <div class="text-xl text-gray-300 mb-2" x-text="scanResult?.rating"></div>
+                <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold"
+                     :class="scanResult?.validation === 'pass' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
+                    <i class="fas mr-2" :class="scanResult?.validation === 'pass' ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                    <span x-text="scanResult?.validation === 'pass' ? 'Validation Passed' : 'Validation Failed'"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Token Details Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Token Information -->
+            <div>
+                <h4 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-coins mr-2"></i>
+                    Token Information
+                </h4>
+                <div class="bg-gray-900/50 rounded-lg p-6 space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                        <span class="text-gray-400">Symbol</span>
+                        <span class="text-white font-semibold" x-text="scanResult?.full_data?.moon_score?.metrics?.symbol || 'N/A'"></span>
+                    </div>
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                        <span class="text-gray-400">Name</span>
+                        <span class="text-white font-semibold" x-text="scanResult?.full_data?.moon_score?.metrics?.name || 'N/A'"></span>
+                    </div>
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                        <span class="text-gray-400">Price</span>
+                        <span class="text-white font-semibold" x-text="'$' + (scanResult?.full_data?.moon_score?.metrics?.price_usd || 0).toFixed(8)"></span>
+                    </div>
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                        <span class="text-gray-400">Market Cap</span>
+                        <span class="text-white font-semibold" x-text="'$' + (scanResult?.full_data?.moon_score?.metrics?.market_cap_usd || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                        <span class="text-gray-400">Liquidity</span>
+                        <span class="text-white font-semibold" x-text="'$' + (scanResult?.full_data?.moon_score?.metrics?.liquidity_usd || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                        <span class="text-gray-400">24h Volume</span>
+                        <span class="text-white font-semibold" x-text="'$' + (scanResult?.full_data?.moon_score?.metrics?.volume_24h || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                        <span class="text-gray-400">Holders</span>
+                        <span class="text-white font-semibold" x-text="(scanResult?.full_data?.moon_score?.metrics?.total_holders || 0).toLocaleString()"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Age</span>
+                        <span class="text-white font-semibold" x-text="(scanResult?.full_data?.moon_score?.metrics?.age_minutes || 0).toFixed(1) + ' minutes'"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Breakdown -->
+            <div>
+                <h4 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-chart-bar mr-2"></i>
+                    Score Breakdown
+                </h4>
+                <div class="bg-gray-900/50 rounded-lg p-6 space-y-4">
+                    <template x-for="(value, key) in scanResult?.full_data?.moon_score?.components" :key="key">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-400" x-text="key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
+                                <span class="text-sm text-white font-semibold" x-text="value.toFixed(1)"></span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500" :style="`width: ${value}%`"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validation Results -->
+        <div class="mt-8">
+            <h4 class="text-lg font-bold text-white mb-4">
+                <i class="fas fa-shield-alt mr-2"></i>
+                Validation Results
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <template x-for="check in scanResult?.full_data?.validation?.checks" :key="check.name">
+                    <div class="bg-gray-900/50 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 mt-1">
+                                <i class="fas text-lg" :class="{
+                                    'fa-check-circle text-green-400': check.status === 'pass',
+                                    'fa-times-circle text-red-400': check.status === 'fail',
+                                    'fa-question-circle text-gray-400': check.status === 'unknown'
+                                }"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h5 class="text-sm font-bold text-white" x-text="check.name"></h5>
+                                    <span class="text-xs px-2 py-1 rounded-full" 
+                                          :class="{
+                                              'bg-red-500/20 text-red-300': check.severity === 'critical',
+                                              'bg-orange-500/20 text-orange-300': check.severity === 'high',
+                                              'bg-yellow-500/20 text-yellow-300': check.severity === 'medium',
+                                              'bg-gray-500/20 text-gray-300': check.severity === 'low'
+                                          }"
+                                          x-text="check.severity.toUpperCase()">
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-300" x-text="check.message"></p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Token Address -->
+        <div class="mt-8 bg-gray-900/50 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <code class="text-sm text-blue-400 font-mono break-all" x-text="scanResult?.token_address"></code>
+                <button @click="copyToClipboard(scanResult?.token_address)" class="ml-4 text-gray-400 hover:text-white">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-6 flex gap-4">
+            <a :href="`https://solscan.io/token/${scanResult?.token_address}`" target="_blank" 
+               class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-center transition-colors">
+                <i class="fas fa-external-link-alt mr-2"></i>
+                View on Solscan
+            </a>
+            <button @click="scanResult = null; tokenAddress = ''" 
+                    class="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
+                <i class="fas fa-redo mr-2"></i>
+                Scan Another
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Display -->
+    <div x-show="errorMessage" x-cloak class="bg-red-900/50 border border-red-500 rounded-lg p-6 mb-8">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-exclamation-circle text-red-400 text-2xl"></i>
+            <div>
+                <h4 class="text-lg font-bold text-white mb-1">Scan Failed</h4>
+                <p class="text-red-300" x-text="errorMessage"></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function scanData() {
+    return {
+        tokenAddress: '',
+        scanning: false,
+        scanResult: null,
+        errorMessage: null,
+        
+        init() {
+            // Check if there's a token in URL params
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            if (token) {
+                this.tokenAddress = token;
+                this.scanToken();
+            }
+        },
+        
+        async scanToken() {
+            if (!this.tokenAddress || this.scanning) return;
+            
+            this.scanning = true;
+            this.scanResult = null;
+            this.errorMessage = null;
+            
+            try {
+                const response = await fetch('/api/scan/manual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token_address: this.tokenAddress })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.scanResult = result.data;
+                    window.showToast('✅ Scan completed successfully!', 'success');
+                } else {
+                    this.errorMessage = result.error || 'Unknown error occurred';
+                    window.showToast('❌ Scan failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error scanning token:', error);
+                this.errorMessage = error.message;
+                window.showToast('❌ Error: ' + error.message, 'error');
+            } finally {
+                this.scanning = false;
+            }
+        },
+        
+        getScoreColor(score) {
+            if (!score) return 'text-gray-400';
+            if (score >= 90) return 'text-blue-400';
+            if (score >= 80) return 'text-green-400';
+            if (score >= 70) return 'text-yellow-400';
+            if (score >= 60) return 'text-orange-400';
+            return 'text-red-400';
+        },
+        
+        copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                window.showToast('Address copied to clipboard!', 'success');
+            }).catch(() => {
+                window.showToast('Failed to copy', 'error');
+            });
+        }
+    }
+}
+</script>
+{% endblock %}
